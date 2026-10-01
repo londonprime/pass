@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DARKPASS — Secure Password Generator</title>
+<style>
+:root{
+  --bg:#080b0f;--card:#11161e;--card2:#151a23;--line:#262b33;--text:#e6edf3;--muted:#8b96a5;
+  --accent:#9aa3af;--accent-d:#6b7685;--warn:#b8c0cc;--bad:#d0d6de;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+:root:not([data-theme="light"]){color-scheme:dark}
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--text);
+  font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.45;
+  background-image:radial-gradient(900px 400px at 50% -120px,rgba(255,255,255,.06),transparent)}
+.wrap{max-width:640px;margin:0 auto;padding:20px 16px 48px}
+header{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.logo{width:40px;height:40px;border-radius:10px;background:var(--card2);border:1px solid var(--line);display:grid;place-items:center;flex:none}
+.logo svg{width:22px;height:22px}
+.brand h1{margin:0;font-size:18px;letter-spacing:.14em;font-weight:700}
+.brand p{margin:0;font-size:12px;color:var(--muted)}
+.status{margin-left:auto;font-size:11px;letter-spacing:.08em;color:var(--accent);border:1px solid rgba(154,163,175,.35);
+  border-radius:999px;padding:5px 10px;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.status i{width:6px;height:6px;border-radius:50%;background:var(--accent)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px}
+.label{font-size:11px;letter-spacing:.12em;color:var(--muted);font-weight:600;margin:0 0 10px}
+.pw-row{display:flex;gap:10px;align-items:stretch}
+.pw-box{flex:1;min-width:0;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:14px;
+  font-family:ui-monospace,"JetBrains Mono",SFMono-Regular,Menlo,Consolas,monospace;font-size:19px;
+  word-break:break-all;min-height:64px;display:flex;align-items:center;transition:border-color .2s}
+.pw-box.flash{animation:flash .45s ease}
+@keyframes flash{0%{border-color:var(--accent);box-shadow:0 0 0 3px rgba(154,163,175,.18);transform:translateY(3px);opacity:.4}100%{transform:none;opacity:1}}
+.pw-box.err{color:var(--bad);font-family:inherit;font-size:14px}
+.btn{font:inherit;cursor:pointer;border-radius:14px;border:1px solid var(--line);background:var(--card2);color:var(--text);
+  padding:0 16px;min-height:48px;font-weight:600;transition:background .2s,border-color .2s,transform .1s}
+.btn:hover{border-color:#3a4658}
+.btn:active{transform:scale(.97)}
+.btn:focus-visible,.row:focus-within,input[type=range]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn.copy{font-size:12px;letter-spacing:.08em;min-width:104px;color:var(--accent);border-color:rgba(154,163,175,.35)}
+.btn.copy.done{background:var(--accent);color:#0b0e12}
+.tools{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+.link{background:none;border:0;color:var(--muted);font:inherit;font-size:13px;cursor:pointer;padding:8px 0;min-height:40px}
+.link:hover{color:var(--text)}
+.meter{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:14px}
+.meter span{height:6px;border-radius:3px;background:var(--line);transition:background .3s}
+.strength{font-size:14px;color:var(--muted);margin:10px 0 0}
+.strength b{color:var(--text)}
+hr{border:0;border-top:1px solid var(--line);margin:20px 0}
+.len{display:flex;justify-content:space-between;align-items:baseline}
+.len output{font-size:28px;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;margin:14px 0 0;height:32px;-webkit-appearance:none;appearance:none;background:transparent}
+input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:linear-gradient(to right,var(--accent) var(--p,50%),var(--line) var(--p,50%))}
+input[type=range]::-moz-range-track{height:6px;border-radius:3px;background:var(--line)}
+input[type=range]::-moz-range-progress{height:6px;border-radius:3px;background:var(--accent)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:var(--accent);border:4px solid #3a424d;margin-top:-10px}
+input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--accent);border:4px solid #3a424d}
+.opts{display:grid;gap:8px;margin-top:6px}
+.row{display:flex;align-items:center;gap:14px;background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:0 16px;min-height:54px;cursor:pointer;transition:border-color .2s;user-select:none}
+.row:hover{border-color:#3a4658}
+.row input{position:absolute;opacity:0;pointer-events:none}
+.box{width:22px;height:22px;border-radius:7px;border:1.5px solid #3a4658;display:grid;place-items:center;flex:none;transition:.15s}
+.box svg{width:14px;height:14px;opacity:0;transform:scale(.6);transition:.15s}
+.row input:checked~.box{background:var(--accent);border-color:var(--accent)}
+.row input:checked~.box svg{opacity:1;transform:none}
+.row .t{font-weight:600}
+.row .d{margin-left:auto;font-size:12px;color:var(--muted);text-align:right}
+.msg{min-height:20px;font-size:13px;color:var(--warn);margin:10px 0 0}
+.gen{width:100%;min-height:56px;margin-top:14px;font-size:16px;background:var(--accent);border-color:var(--accent);color:#0b0e12}
+.gen:hover{background:#b4bcc7;border-color:#b4bcc7}
+.presets{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.presets .btn{padding:0 6px;font-size:13px}
+.hist{margin-top:16px}
+.hist-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.hist-head .label{margin:0}
+.item{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.item code{flex:1;min-width:0;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;word-break:break-all;color:var(--text)}
+.item small{color:var(--muted);font-size:12px;flex:none}
+.item .btn{min-height:40px;padding:0 12px;font-size:12px}
+.empty{color:var(--muted);font-size:13px;padding:14px 0 4px;border-top:1px solid var(--line)}
+.note{text-align:center;color:var(--muted);font-size:12px;margin:18px 0 0}
+#toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;pointer-events:none;
+  background:var(--card2);border:1px solid rgba(154,163,175,.4);color:var(--text);padding:11px 18px;border-radius:12px;font-size:14px;transition:.25s;z-index:9}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+@media(min-width:640px){.wrap{padding:48px 24px 72px}.card{padding:32px}.pw-box{font-size:22px}.brand h1{font-size:20px}}
+@media(max-width:380px){.pw-row{flex-direction:column}.btn.copy{min-height:44px}.row .d{display:none}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+.gen{position:relative;overflow:hidden}
+.gen::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.22) 50%,transparent 70%);transform:translateX(-120%)}
+.gen:hover::after{animation:sweep .9s ease}
+@keyframes sweep{to{transform:translateX(120%)}}
+.status i{animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(154,163,175,.5)}60%{box-shadow:0 0 0 6px rgba(154,163,175,0)}}
+body::before{content:"";position:fixed;width:520px;height:520px;left:50%;top:-200px;margin-left:-260px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,255,255,.05),transparent 65%);pointer-events:none;animation:drift 14s ease-in-out infinite alternate}
+@keyframes drift{to{transform:translate(160px,120px) scale(1.2)}}
+header,main.card,.hist,.note{animation:rise .7s cubic-bezier(.2,.7,.2,1) both}
+main.card{animation-delay:.1s}.hist{animation-delay:.22s}.note{animation-delay:.34s}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.logo svg{animation:lock 5s ease-in-out infinite}
+@keyframes lock{0%,88%,100%{transform:none}92%{transform:rotate(-8deg)}96%{transform:rotate(6deg)}}
+.meter span{transition:background .35s,transform .35s}
+.meter span:nth-child(2){transition-delay:.04s}.meter span:nth-child(3){transition-delay:.08s}.meter span:nth-child(4){transition-delay:.12s}.meter span:nth-child(5){transition-delay:.16s}
+.meter.bump span{animation:bump .4s ease}
+@keyframes bump{50%{transform:scaleY(2)}}
+.item{animation:itemIn .35s ease both}
+@keyframes itemIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:none}}
+.btn.copy.done{animation:pop .35s ease}
+@keyframes pop{50%{transform:scale(1.07)}}
+.row:active .box{transform:scale(.85)}
+.len output{display:inline-block;transition:transform .15s}
+.len output.tick{transform:scale(1.18)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#9aa3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></div>
+    <div class="brand"><h1>DARKPASS</h1><p>Secure Password Generator</p></div>
+    <div class="status"><i></i>LOCAL • PRIVATE</div>
+  </header>
+
+  <main class="card">
+    <p class="label">СГЕНЕРИРОВАННЫЙ ПАРОЛЬ</p>
+    <div class="pw-row">
+      <div class="pw-box" id="pw" aria-live="polite"></div>
+      <button class="btn copy" id="copy" type="button">КОПИРОВАТЬ</button>
+    </div>
+    <div class="tools"><button class="link" id="toggle" type="button">Скрыть пароль</button></div>
+    <div class="meter" id="meter"><span></span><span></span><span></span><span></span><span></span></div>
+    <p class="strength">Надёжность: <b id="strength">—</b></p>
+    <hr>
+    <div class="len"><label class="label" for="len" style="margin:0">Длина пароля</label><output id="lenOut" for="len">20</output></div>
+    <input type="range" id="len" min="4" max="64" value="20">
+    <div class="opts" style="margin-top:18px">
+      <label class="row"><input type="checkbox" id="upper" checked><span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="#0b0e12" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></span><span class="t">A–Z</span><span class="d">заглавные буквы</span></label>
+      <label class="row"><input type="checkbox" id="lower" checked><span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="#0b0e12" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></span><span class="t">a–z</span><span class="d">строчные буквы</span></label>
+      <label class="row"><input type="checkbox" id="digits" checked><span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="#0b0e12" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></span><span class="t">0–9</span><span class="d">цифры</span></label>
+      <label class="row"><input type="checkbox" id="symbols" checked><span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="#0b0e12" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></span><span class="t">Символы</span><span class="d">! @ # $ % ^ &amp; *</span></label>
+      <label class="row"><input type="checkbox" id="noSimilar"><span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="#0b0e12" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></span><span class="t">Без похожих</span><span class="d">O 0 I l 1</span></label>
+      <label class="row"><input type="checkbox" id="spaces"><span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="#0b0e12" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></span><span class="t">Пробелы</span><span class="d">внутри пароля</span></label>
+    </div>
+    <p class="msg" id="msg" role="alert"></p>
+    <button class="btn gen" id="gen" type="button">Сгенерировать пароль</button>
+    <div class="presets">
+      <button class="btn" type="button" data-len="12">Быстрый · 12</button>
+      <button class="btn" type="button" data-len="20">Сильный · 20</button>
+      <button class="btn" type="button" data-len="32">Макс. · 32</button>
+    </div>
+  </main>
+
+  <section class="card hist">
+    <div class="hist-head"><p class="label">ПОСЛЕДНИЕ ПАРОЛИ</p><button class="link" id="clear" type="button">Очистить историю</button></div>
+    <div id="list"></div>
+  </section>
+  <p class="note">Пароли создаются прямо на вашем устройстве. Ничего не отправляется на сервер.</p>
+</div>
+<div id="toast"></div>
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id)};
+  var SETS={upper:"ABCDEFGHIJKLMNOPQRSTUVWXYZ",lower:"abcdefghijklmnopqrstuvwxyz",digits:"0123456789",symbols:"!@#$%^&*()-_=+[]{};:,.?/~"};
+  var SIMILAR=/[O0Il1|`'"]/g;
+  var HKEY="darkpass.history.v1",MAX_HIST=10;
+  var els={pw:$("pw"),len:$("len"),lenOut:$("lenOut"),msg:$("msg"),copy:$("copy"),toggle:$("toggle"),
+    strength:$("strength"),meter:$("meter").children,list:$("list")};
+  var opts=["upper","lower","digits","symbols","noSimilar","spaces"];
+  var current="",hidden=false,toastTimer;
+
+  // Безопасное равномерное число [0,n) без смещения (rejection sampling)
+  function randInt(n){
+    var max=Math.floor(4294967296/n)*n,buf=new Uint32Array(1);
+    do{crypto.getRandomValues(buf)}while(buf[0]>=max);
+    return buf[0]%n;
+  }
+  function pool(key){
+    var s=SETS[key];
+    return $("noSimilar").checked?s.replace(SIMILAR,""):s;
+  }
+  function selectedSets(){
+    var arr=[];
+    ["upper","lower","digits","symbols"].forEach(function(k){if($(k).checked){var p=pool(k);if(p)arr.push(p)}});
+    return arr;
+  }
+  function generate(){
+    var sets=selectedSets(),len=+els.len.value;
+    if(!sets.length){showError("Выберите хотя бы один набор: A–Z, a–z, 0–9 или символы.");return false}
+    var all=sets.join(""),chars=[],i;
+    // по одному символу из каждого набора гарантирует разнообразие
+    for(i=0;i<sets.length&&chars.length<len;i++)chars.push(sets[i][randInt(sets[i].length)]);
+    while(chars.length<len)chars.push(all[randInt(all.length)]);
+    for(i=chars.length-1;i>0;i--){var j=randInt(i+1),t=chars[i];chars[i]=chars[j];chars[j]=t}
+    if($("spaces").checked&&len>=3){
+      // пробелы только внутри, не в начале и не в конце
+      var n=Math.max(1,Math.floor(len/8));
+      for(i=0;i<n;i++){var pos=1+randInt(len-2);if(chars[pos-1]!==" "&&chars[pos+1]!==" ")chars[pos]=" "}
+    }
+    current=chars.join("");
+    els.msg.textContent="";
+    els.pw.classList.remove("err");
+    render();
+    return true;
+  }
+  function showError(text){
+    els.msg.textContent=text;
+    current="";
+    els.pw.classList.add("err");
+    els.pw.textContent="Пароль не создан";
+    setStrength(0,"—");
+  }
+  function render(){
+    clearInterval(scrambleTimer);
+    els.pw.textContent=hidden?"•".repeat(current.length):current;
+    els.pw.style.whiteSpace=hidden?"normal":"pre-wrap";
+    els.toggle.textContent=hidden?"Показать пароль":"Скрыть пароль";
+    var s=score(current);
+    setStrength(s.level,s.name);
+  }
+  // оценка по энтропии: длина × log2(размер алфавита)
+  function score(pw){
+    if(!pw)return{level:0,name:"—"};
+    var size=0;
+    if(/[A-Z]/.test(pw))size+=26;
+    if(/[a-z]/.test(pw))size+=26;
+    if(/[0-9]/.test(pw))size+=10;
+    if(/[^A-Za-z0-9 ]/.test(pw))size+=24;
+    if(/ /.test(pw))size+=1;
+    var bits=pw.length*Math.log2(Math.max(size,2));
+    var names=["Очень слабый","Слабый","Средний","Сильный","Очень сильный"];
+    var lvl=bits<28?1:bits<45?2:bits<64?3:bits<90?4:5;
+    return{level:lvl,name:names[lvl-1]};
+  }
+  function setStrength(level,name){
+    var colors=["","#454c57","#566070","#6b7685","#838e9d","#9aa3af"];
+    for(var i=0;i<5;i++)els.meter[i].style.background=i<level?colors[level]:"";
+    els.strength.textContent=name;
+  }
+  var scrambleTimer;
+  function animate(){
+    els.pw.classList.remove("flash");void els.pw.offsetWidth;els.pw.classList.add("flash");
+    var m=$("meter");m.classList.remove("bump");void m.offsetWidth;m.classList.add("bump");
+    if(hidden||!current||matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+    var final=current,frame=0,total=14,glyphs="#$%&*+=?@ABCXYZ0123456789";
+    clearInterval(scrambleTimer);
+    scrambleTimer=setInterval(function(){
+      frame++;
+      var reveal=Math.floor(final.length*frame/total),out="";
+      for(var i=0;i<final.length;i++)out+=(i<reveal||final[i]===" ")?final[i]:glyphs[randInt(glyphs.length)];
+      els.pw.textContent=out;
+      if(frame>=total){clearInterval(scrambleTimer);els.pw.textContent=final}
+    },32);
+  }
+  function toast(text){
+    var t=$("toast");t.textContent=text;t.classList.add("show");
+    clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.classList.remove("show")},1800);
+  }
+  function copyText(text){
+    if(navigator.clipboard&&window.isSecureContext){
+      return navigator.clipboard.writeText(text).catch(function(){return fallbackCopy(text)});
+    }
+    return fallbackCopy(text);
+  }
+  function fallbackCopy(text){
+    return new Promise(function(res,rej){
+      var ta=document.createElement("textarea");
+      ta.value=text;ta.setAttribute("readonly","");ta.style.cssText="position:fixed;opacity:0;top:0";
+      document.body.appendChild(ta);ta.select();ta.setSelectionRange(0,text.length);
+      var ok=false;try{ok=document.execCommand("copy")}catch(e){}
+      document.body.removeChild(ta);ok?res():rej();
+    });
+  }
+
+  // История (только localStorage)
+  function loadHist(){try{var h=JSON.parse(localStorage.getItem(HKEY));return Array.isArray(h)?h:[]}catch(e){return[]}}
+  function saveHist(h){try{localStorage.setItem(HKEY,JSON.stringify(h))}catch(e){}}
+  var history=loadHist();
+  function pushHist(pw){
+    history=history.filter(function(x){return x!==pw});
+    history.unshift(pw);history=history.slice(0,MAX_HIST);saveHist(history);renderHist();
+  }
+  function renderHist(){
+    els.list.innerHTML="";
+    if(!history.length){var e=document.createElement("div");e.className="empty";e.textContent="Пока пусто. Сгенерируйте первый пароль.";els.list.appendChild(e);return}
+    history.forEach(function(pw,idx){
+      var row=document.createElement("div");row.className="item";row.style.animationDelay=idx*45+"ms";
+      var c=document.createElement("code");c.textContent=pw;
+      var s=document.createElement("small");s.textContent=pw.length+" симв.";
+      var b=document.createElement("button");b.className="btn";b.type="button";b.textContent="Копировать";
+      b.addEventListener("click",function(){copyText(pw).then(function(){toast("Пароль скопирован")},function(){toast("Не удалось скопировать")})});
+      row.appendChild(c);row.appendChild(s);row.appendChild(b);els.list.appendChild(row);
+    });
+  }
+
+  function syncSlider(){
+    els.lenOut.textContent=els.len.value;els.lenOut.classList.add("tick");setTimeout(function(){els.lenOut.classList.remove("tick")},120);
+    els.len.style.setProperty("--p",((els.len.value-4)/60*100)+"%");
+  }
+  function run(withToast){
+    if(generate()){animate();pushHist(current);if(withToast)toast("Пароль сгенерирован")}
+  }
+
+  els.len.addEventListener("input",function(){syncSlider();generate();});
+  els.len.addEventListener("change",function(){if(current)pushHist(current)});
+  opts.forEach(function(k){$(k).addEventListener("change",function(){generate()})});
+  $("gen").addEventListener("click",function(){run(true)});
+  document.querySelectorAll("[data-len]").forEach(function(b){
+    b.addEventListener("click",function(){
+      els.len.value=b.dataset.len;
+      ["upper","lower","digits","symbols"].forEach(function(k){$(k).checked=true});
+      $("spaces").checked=false;
+      syncSlider();run(true);
+    });
+  });
+  els.copy.addEventListener("click",function(){
+    if(!current){toast("Сначала создайте пароль");return}
+    copyText(current).then(function(){
+      els.copy.textContent="Скопировано ✓";els.copy.classList.add("done");toast("Пароль скопирован");
+      setTimeout(function(){els.copy.textContent="КОПИРОВАТЬ";els.copy.classList.remove("done")},1600);
+    },function(){toast("Не удалось скопировать")});
+  });
+  els.toggle.addEventListener("click",function(){hidden=!hidden;if(current)render()});
+  $("clear").addEventListener("click",function(){history=[];saveHist(history);renderHist();toast("История очищена")});
+
+  syncSlider();renderHist();generate();
+})();
+</script>
+</body>
+</html>
